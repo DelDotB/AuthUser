@@ -10,6 +10,7 @@ using AuthUser.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using ASPNetCoreIdentity.Models.AccountViewModels;
+using AuthUser.Models.AccountViewModels;
 
 namespace AuthUser.Controllers
 {
@@ -68,13 +69,13 @@ namespace AuthUser.Controllers
 		{
 			ViewData["ReturnUrl"] = returnUrl;
 
-			if( ModelState.IsValid)
+			if (ModelState.IsValid)
 			{
 				var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
 				int userCount = -_userManager.Users.Count();
 				var result = await _userManager.CreateAsync(user, model.Password);
 
-				if( result.Succeeded)
+				if (result.Succeeded)
 				{
 					if (userCount == 0)
 					{
@@ -100,9 +101,95 @@ namespace AuthUser.Controllers
 			return View(model);
 		}
 
+		[HttpGet]
+		[Authorize(Roles = "admin")]
+		public IActionResult AddUser(string returnUrl = null)
+		{
+			ViewData["ReturnUrl"] = returnUrl;
+			UserViewModel model = new UserViewModel();
+			model.Roles.Add(new RoleViewModel()
+			{
+				Id = Helper.Constants.AdminRoleName,
+				Name = Helper.Constants.AdminRoleName
+			});
+
+			model.Roles.Add(new RoleViewModel()
+			{
+				Id = Helper.Constants.NormalRoleName,
+				Name = Helper.Constants.NormalRoleName
+			});
+
+			return View(model);
+		}
+
+		[HttpPost]
+		[Authorize(Roles = "admin")]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> AddUser(UserViewModel model, string returnUrl = null)
+		{
+			ViewData["ReturnUrl"] = returnUrl;
+			if (ModelState.IsValid)
+			{
+				var user = new ApplicationUser
+				{
+					UserName = model.Email,
+					Email = model.Email
+				};
+				var result = await _userManager.CreateAsync(user, model.Password);
+				if (result.Succeeded)
+				{
+					await _userManager.AddToRoleAsync(user, model.SelectedRole);
+					_logger.LogInformation("New user added");
+					return RedirectToLocal(returnUrl);
+				}
+
+				//AddError(result);
+			}
+
+			// if we got this far, something failed. Redisplay form.
+			return View(model);
+		}
+
+		[HttpGet]
+		[AllowAnonymous]
+		public async Task<IActionResult> Login(string returnUrl = null)
+		{
+			// clear user's existing external cookie to ensure clean login
+			await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+			ViewData["ReturnUrl"] = returnUrl;
+			return View();
+		}
+
+		[HttpPost]
+		[AllowAnonymous]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+		{
+			ViewData["ReturnUrl"] = returnUrl;
+			if (ModelState.IsValid)
+			{
+				var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+				if (result.Succeeded)
+				{
+					_logger.LogInformation("User logged in");
+					return RedirectToLocal(returnUrl);
+				}
+				else
+				{
+					ModelState.AddModelError(string.Empty, "Invalid login attempt");
+					return View(model);
+				}
+			}
+			// if we got this far, something failed. Redisplay form.
+			return View(model);
+		}
+
+
+		
+
 		private IActionResult RedirectToLocal(string returnUrl)
 		{
-			if( Url.IsLocalUrl(returnUrl))
+			if (Url.IsLocalUrl(returnUrl))
 			{
 				return Redirect(returnUrl);
 			}
