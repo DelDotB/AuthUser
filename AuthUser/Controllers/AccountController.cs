@@ -93,7 +93,7 @@ namespace AuthUser.Controllers
 
 					return RedirectToAction(returnUrl);
 				}
-				//AddError(result);
+				AddErrors(result);
 
 			}
 
@@ -143,7 +143,7 @@ namespace AuthUser.Controllers
 					return RedirectToLocal(returnUrl);
 				}
 
-				//AddError(result);
+				AddErrors(result);
 			}
 
 			// if we got this far, something failed. Redisplay form.
@@ -184,8 +184,22 @@ namespace AuthUser.Controllers
 			return View(model);
 		}
 
-
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Logout()
+		{
+			await _signInManager.SignOutAsync();
+			_logger.LogInformation("user logged out");
+			return RedirectToAction(nameof(HomeController.Index), "Home");
+		}
 		
+		private void AddErrors(IdentityResult result)
+		{
+			foreach(var error in result.Errors)
+			{
+				ModelState.AddModelError(string.Empty, error.Description);
+			}
+		}
 
 		private IActionResult RedirectToLocal(string returnUrl)
 		{
