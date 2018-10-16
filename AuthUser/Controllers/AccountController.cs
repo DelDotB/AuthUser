@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using AuthUser.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
-using ASPNetCoreIdentity.Models.AccountViewModels;
 using AuthUser.Models.AccountViewModels;
 
 namespace AuthUser.Controllers
@@ -19,13 +18,13 @@ namespace AuthUser.Controllers
 		private readonly UserManager<ApplicationUser> _userManager;
 		private readonly SignInManager<ApplicationUser> _signInManager;
 		private readonly RoleManager<IdentityRole> _roleManager;
-		private readonly ILogger _logger;
+		private readonly ILogger<AccountController> _logger;
 
 		public AccountController(
 			UserManager<ApplicationUser> userManager,
 			SignInManager<ApplicationUser> signInManager,
 			RoleManager<IdentityRole> roleManager,
-			ILogger logger
+			ILogger<AccountController> logger
 			)
 		{
 			_userManager = userManager;
