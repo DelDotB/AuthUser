@@ -1,0 +1,5 @@
+﻿//add initial migration ef package
+dotnet ef migrations add Initial
+
+// update DB with tables, etc.
+dotnet ef database update
